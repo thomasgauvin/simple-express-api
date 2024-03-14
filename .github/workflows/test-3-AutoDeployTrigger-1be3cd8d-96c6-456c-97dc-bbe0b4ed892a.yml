@@ -1,0 +1,47 @@
+name: Trigger auto deployment for test-3
+
+# When this action will be executed
+on:
+  # Automatically trigger it when detected changes in repo
+  push:
+    branches: 
+      [ main ]
+    paths:
+    - '//**'
+    - '.github/workflows/test-3-AutoDeployTrigger-1be3cd8d-96c6-456c-97dc-bbe0b4ed892a.yml'
+
+  # Allow manual trigger 
+  workflow_dispatch:      
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions: 
+      id-token: write #This is required for requesting the OIDC JWT Token
+      contents: read #Required when GH token is used to authenticate with private repo
+
+    steps:
+      - name: Checkout to the branch
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.TEST3_AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.TEST3_AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.TEST3_AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push container image to registry
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          appSourcePath: ${{ github.workspace }} 
+          registryUrl: containerregistryyc33uymin6wkc.azurecr.io
+          registryUsername: ${{ secrets.TEST3_REGISTRY_USERNAME }}
+          registryPassword: ${{ secrets.TEST3_REGISTRY_PASSWORD }}
+          containerAppName: test-3
+          resourceGroup: nextjshybridstarter9c11
+          imageToBuild: containerregistryyc33uymin6wkc.azurecr.io/test-3:${{ github.sha }}
+          _buildArgumentsKey_: |
+            _buildArgumentsValues_
+
+
